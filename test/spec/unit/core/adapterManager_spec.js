@@ -3,6 +3,7 @@ import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const CONFIG = {
@@ -26,18 +27,78 @@ describe('adapterManager tests', () => {
     var stubSetStorageItem;
 
     beforeEach(() => {
-      AdapterManager.setS2SConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
 
       prebidServerAdapterMock.callBids.reset();
     });
 
-    it('invokes callBids on the S2S adapter', () => {
-      AdapterManager.callBids({adUnits: getAdUnits()});
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it.skip('invokes callBids on the S2S adapter', () => {
+      let bidRequests = [{
+        'bidderCode': 'appnexus',
+        'requestId': '1863e370099523',
+        'bidderRequestId': '2946b569352ef2',
+        'tid': '34566b569352ef2',
+        'src': 's2s',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '4799418',
+              'test': 'me'
+            },
+            'adUnitCode': '/19968336/header-bid-tag1',
+            'sizes': [
+              [
+                728,
+                90
+              ],
+              [
+                970,
+                90
+              ]
+            ],
+            'bidId': '392b5a6b05d648',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897462,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          },
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '4799418'
+            },
+            'adUnitCode': '/19968336/header-bid-tag-0',
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '4dccdc37746135',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897463,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          }
+        ],
+        'start': 1462918897460
+      }];
+
+      AdapterManager.callBids(getAdUnits(), bidRequests);
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
 
-    it('invokes callBids with only s2s bids', () => {
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it.skip('invokes callBids with only s2s bids', () => {
       const adUnits = getAdUnits();
       // adUnit without appnexus bidder
       adUnits.push({
@@ -53,35 +114,70 @@ describe('adapterManager tests', () => {
           }
         ]
       });
-      AdapterManager.callBids({adUnits: adUnits});
+
+      let bidRequests = [{
+        'bidderCode': 'appnexus',
+        'requestId': '1863e370099523',
+        'bidderRequestId': '2946b569352ef2',
+        'tid': '34566b569352ef2',
+        'src': 's2s',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '4799418',
+              'test': 'me'
+            },
+            'adUnitCode': '/19968336/header-bid-tag1',
+            'sizes': [
+              [
+                728,
+                90
+              ],
+              [
+                970,
+                90
+              ]
+            ],
+            'bidId': '392b5a6b05d648',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897462,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          },
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': '4799418'
+            },
+            'adUnitCode': '/19968336/header-bid-tag-0',
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '4dccdc37746135',
+            'bidderRequestId': '2946b569352ef2',
+            'requestId': '1863e370099523',
+            'startTime': 1462918897463,
+            'status': 1,
+            'transactionId': 'fsafsa'
+          }
+        ],
+        'start': 1462918897460
+      }];
+      AdapterManager.callBids(adUnits, bidRequests);
       const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(2);
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
   }); // end s2s tests
-
-  describe('The setBidderSequence() function', () => {
-    let spy;
-
-    beforeEach(() => {
-      spy = sinon.spy(utils, 'logWarn')
-    });
-
-    afterEach(() => {
-      utils.logWarn.restore();
-    });
-
-    it('should log a warning on invalid values', () => {
-      AdapterManager.setBidderSequence('unrecognized sequence');
-      expect(spy.calledOnce).to.equal(true);
-    });
-
-    it('should not log warnings when given recognized values', () => {
-      AdapterManager.setBidderSequence('fixed');
-      AdapterManager.setBidderSequence('random');
-      expect(spy.called).to.equal(false);
-    });
-  })
 
   describe('aliasBidderAdaptor', function() {
     const CODE = 'sampleBidder';
